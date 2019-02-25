@@ -17,7 +17,7 @@ class Smooth(object):
         :param num_classes:
         :param sigma: the noise level hyperparameter
         """
-        self.base_classifier = base_classifier
+        self.base_classifier = base_classifier.cuda()
         self.num_classes = num_classes
         self.sigma = sigma
 
@@ -82,16 +82,16 @@ class Smooth(object):
         :return: an ndarray[int] of length num_classes containing the per-class counts
         """
         with torch.no_grad():
-            counts = np.zeros(self.num_classes, dtype=int)
+            counts = torch.zeros(self.num_classes, dtype=torch.long).cuda()
             for _ in range(ceil(num / batch_size)):
                 this_batch_size = min(batch_size, num)
                 num -= this_batch_size
 
-                batch = x.repeat((this_batch_size, 1, 1, 1))
+                batch = x.repeat((this_batch_size, 1, 1, 1)).cuda()
                 noise = torch.randn_like(batch, device='cuda') * self.sigma
                 predictions = self.base_classifier(batch + noise).argmax(1)
-                counts += self._count_arr(predictions.cpu().numpy(), self.num_classes)
-            return counts
+                counts += torch.bincount(predictions, minlength=self.num_classes)
+            return counts.cpu().numpy()
 
     def _count_arr(self, arr: np.ndarray, length: int) -> np.ndarray:
         counts = np.zeros(length, dtype=int)

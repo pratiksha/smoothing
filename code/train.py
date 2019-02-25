@@ -15,10 +15,14 @@ import time
 import datetime
 from train_utils import AverageMeter, accuracy, init_logfile, log
 
+from transforms.subsample_transform import Subsample
+
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('dataset', type=str, choices=DATASETS)
 parser.add_argument('arch', type=str, choices=ARCHITECTURES)
-parser.add_argument('outdir', type=str, help='folder to save model and training log)')
+parser.add_argument('outdir', type=str, help='folder to save model and training log')
+parser.add_argument('--subsample', action='store_true')
+parser.add_argument('--index', type=int, default=0, help='index of model in ensemble, used for subsampling') 
 parser.add_argument('--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
@@ -51,9 +55,14 @@ def main():
     if not os.path.exists(args.outdir):
         os.mkdir(args.outdir)
 
-    train_dataset = get_dataset(args.dataset, 'train')
-    test_dataset = get_dataset(args.dataset, 'test')
+    if args.subsample and args.dataset == "cifar10":
+        train_dataset = get_dataset(args.dataset, 'train', args.subsample, args.index)
+        test_dataset = get_dataset(args.dataset, 'test', args.subsample, args.index)
+    else:
+        train_dataset = get_dataset(args.dataset, 'train')
+        test_dataset = get_dataset(args.dataset, 'test')
     pin_memory = (args.dataset == "imagenet")
+
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch,
                               num_workers=args.workers, pin_memory=pin_memory)
     test_loader = DataLoader(test_dataset, shuffle=False, batch_size=args.batch,

@@ -150,7 +150,7 @@ def markdown_table_certified_accuracy(outfile: str, radius_start: float, radius_
     f.close()
 
 
-if __name__ == "__main__":
+def reproduce():
     latex_table_certified_accuracy(
         "analysis/latex/vary_noise_cifar10", 0.25, 1.5, 0.25, [
             Line(ApproximateAccuracy("data/certify/cifar10/resnet110/noise_0.12/test/sigma_0.12"), "$\sigma = 0.12$"),
@@ -206,4 +206,11 @@ if __name__ == "__main__":
         "analysis/plots/high_prob", "Approximate vs. High-Probability", 2.0, [
             Line(ApproximateAccuracy("data/certify/imagenet/resnet50/noise_0.50/test/sigma_0.50"), "Approximate"),
             Line(HighProbAccuracy("data/certify/imagenet/resnet50/noise_0.50/test/sigma_0.50", 0.001, 0.001), "High-Prob"),
+        ])
+
+    
+if __name__ == "__main__":
+    plot_certified_accuracy(
+        "analysis/plots/cifar_lowres_0.5", "CIFAR-10, vary $\sigma$", 4, [
+            Line(ApproximateAccuracy("lowres_data/certify/cifar10/resnet110/noise_0.5_full"), "$\sigma = 0.5$"),
         ])

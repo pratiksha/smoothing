@@ -8,12 +8,17 @@ from time import time
 import torch
 import datetime
 from architectures import get_architecture
+import tqdm
+
+from transforms.subsample_transform import Subsample
 
 parser = argparse.ArgumentParser(description='Certify many examples')
 parser.add_argument("dataset", choices=DATASETS, help="which dataset")
 parser.add_argument("base_classifier", type=str, help="path to saved pytorch model of base classifier")
 parser.add_argument("sigma", type=float, help="noise hyperparameter")
 parser.add_argument("outfile", type=str, help="output file")
+parser.add_argument('--subsample', action='store_true')
+parser.add_argument('--index', type=int, default=0, help='index of model in ensemble, used for subsampling') 
 parser.add_argument("--batch", type=int, default=1000, help="batch size")
 parser.add_argument("--skip", type=int, default=1, help="how many examples to skip")
 parser.add_argument("--max", type=int, default=-1, help="stop after this many examples")
@@ -37,8 +42,10 @@ if __name__ == "__main__":
     print("idx\tlabel\tpredict\tradius\tcorrect\ttime", file=f, flush=True)
 
     # iterate through the dataset
-    dataset = get_dataset(args.dataset, args.split)
-    for i in range(len(dataset)):
+    dataset = get_dataset(args.dataset, args.split, args.subsample, args.index)
+
+    print('Starting...')
+    for i in tqdm.tqdm(range(len(dataset))):
 
         # only certify every args.skip examples, and stop after args.max examples
         if i % args.skip != 0:
@@ -60,3 +67,4 @@ if __name__ == "__main__":
             i, label, prediction, radius, correct, time_elapsed), file=f, flush=True)
 
     f.close()
+    print('done.')

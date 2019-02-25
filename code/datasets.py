@@ -4,6 +4,8 @@ import torch
 import os
 from torch.utils.data import Dataset
 
+from transforms.subsample_transform import Subsample
+
 # set this environment variable to the location of your imagenet directory if you want to read ImageNet data.
 # make sure your val directory is preprocessed to look like the train directory, e.g. by running this script
 # https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh
@@ -13,12 +15,12 @@ IMAGENET_LOC_ENV = "IMAGENET_DIR"
 DATASETS = ["imagenet", "cifar10"]
 
 
-def get_dataset(dataset: str, split: str) -> Dataset:
+def get_dataset(dataset: str, split: str, subsample: bool = False, index: int = 0) -> Dataset:
     """Return the dataset as a PyTorch Dataset object"""
     if dataset == "imagenet":
         return _imagenet(split)
     elif dataset == "cifar10":
-        return _cifar10(split)
+        return _cifar10(split, subsample, index)
 
 
 def get_num_classes(dataset: str):
@@ -44,16 +46,27 @@ _CIFAR10_MEAN = [0.4914, 0.4822, 0.4465]
 _CIFAR10_STDDEV = [0.2023, 0.1994, 0.2010]
 
 
-def _cifar10(split: str) -> Dataset:
+def _cifar10(split: str, subsample: bool = False, index: int = 0) -> Dataset:
     if split == "train":
-        return datasets.CIFAR10("./dataset_cache", train=True, download=True, transform=transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor()
-        ]))
+        if subsample:
+            return datasets.CIFAR10("./dataset_cache", train=True, download=True, transform=transforms.Compose([
+                transforms.ToTensor(),
+                Subsample(2, index),
+            ]))
+        else:
+            return datasets.CIFAR10("./dataset_cache", train=True, download=True, transform=transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor()
+            ]))
     elif split == "test":
-        return datasets.CIFAR10("./dataset_cache", train=False, download=True, transform=transforms.ToTensor())
-
+        if subsample:
+            return datasets.CIFAR10("./dataset_cache", train=False, download=True, transform=transforms.Compose([
+                transforms.ToTensor(),
+                Subsample(2, index)
+            ]))
+        else:
+            return datasets.CIFAR10("./dataset_cache", train=False, download=True, transform=transforms.ToTensor())
 
 def _imagenet(split: str) -> Dataset:
     if not IMAGENET_LOC_ENV in os.environ:
